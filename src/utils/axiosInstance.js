@@ -1,22 +1,20 @@
 import axios from "axios";
-import { store } from "../redux/store"; // access redux store for token if needed
+import { store } from "../redux/store";
 
-// Change this to your deployed backend URL
-const BASE_URL = "https://travel-story-backend-qxz0.onrender.com/api";
-
+// Use environment variable
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true, // keep this if using cookies for auth
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true, // keep if using cookies
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor: attach token if your backend uses JWT
+// Attach token if present
 axiosInstance.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const token = state.user.currentUser?.token; // token must be sent by backend
+    const token = state.user.currentUser?.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -25,12 +23,11 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle 401 unauthorized
+// Handle unauthorized
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // auto sign out user
       store.dispatch({ type: "user/signOutSuccess" });
       window.location.href = "/login";
     }
